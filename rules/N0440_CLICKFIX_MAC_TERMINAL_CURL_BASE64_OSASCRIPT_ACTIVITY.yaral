@@ -1,0 +1,23 @@
+rule N0440_CLICKFIX_MAC_TERMINAL_CURL_BASE64_OSASCRIPT_ACTIVITY {
+  meta:
+    author = "Robert Clark"
+    description = "Detects ClickFix-style macOS execution involving Terminal or iTerm launching curl, base64 decode, pipe-to-shell, sh -c, or osascript-driven shell activity"
+    severity = "HIGH"
+    date = "2026-04-06"
+    platform = "MAC"
+    logsource = "MACOS_EDR, UNIX_PROCESS, FILE_MONITORING"
+    tactic = "{'TA0001':'Initial Access','TA0002':'Execution','TA0005':'Defense Evasion'}"
+    technique = "{'T1204.001':'User Execution','T1059.004':'Unix Shell','T1059.002':'AppleScript'}"
+    status = "experimental"
+
+  events:
+    $e.metadata.event_type = "PROCESS_LAUNCH"
+
+    re.regex($e.principal.process.command_line, `(?i)(curl|wget|http[s]?://|base64\s+-d|osascript|do\s+shell\s+script|\|\s*(bash|sh|zsh)|\b(bash|sh|zsh)\s+-c\b)`)
+
+    re.regex($e.principal.process.parent_process.file.full_path, `(?i)/(Terminal|iTerm2?)(\.app)?/`)
+    or re.regex($e.principal.process.parent_process.command_line, `(?i)\b(Terminal|iTerm2?)\b`)
+
+  condition:
+    $e
+}
